@@ -65,7 +65,7 @@ public class SyntaxTest {
         String[] strings = new String[5];
 //                        ^^^^^^^^^^^^^^ meta.assignment.rhs.java
 //                         ^^^ keyword.control.new.java
-//                                    ^ constant.numeric.java
+//                                    ^ constant.numeric.integer.decimal
         printList(Arrays.stream(args)
             .collect(Collectors.toCollection(ArrayList::new)));
 //                                                      ^^^ meta.method.body.java - keyword.control.new.java
@@ -79,19 +79,59 @@ public class SyntaxTest {
 //                                                   ^ meta.method.body.java - meta.assignment.rhs.java
             lines.forEach(System.out::println);
 //                                    ^^^^^^^ variable.function.reference.java
+
+        } catch (IOException ignore) {
+//        ^^^^^ keyword.control.catch-exception.java
+//               ^^^^^^^^^^^ support.class.java
+//                           ^^^^^^ variable.parameter
+        } catch (final MyException | com.net.org.Foo.Bar |
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.catch
+//              ^ punctuation.section.parens.begin
+//               ^ meta.catch.parameters storage.modifier.java
+//                     ^ support.class
+//                                 ^ punctuation.separator
+//                                   ^ support.class
+//                                                       ^ punctuation.separator
+                YourException ignore) {}
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.catch
+//              ^ support.class
+//                            ^ variable.parameter
+//                                 ^ meta.catch.parameters
+//                                  ^ punctuation.section.parens.end - meta.catch.parameters
+
+        try (final InputStream is = new FileInputStream(args[0]);
+//           ^^^^^ storage.modifier
+             final OutputStream os = new FileOutputStream(args[1])) {
+//           ^^^^^ storage.modifier
+
+          os.write(is.read());
+//                    ^^^^ variable.function
         }
+
+        try {
+//      ^^^ keyword.control.catch-exception.java
+          Class.forName(args[2]);
+        } catch (Exception e) {
+//        ^^^^^ keyword.control.catch-exception.java
+          log.error(e);
+        } finally {
+//        ^^^^^^^ keyword.control.catch-exception.java
+        }
+
+      for (final int x = 10;;) { System.out.println(x); break; }
+//         ^^^^^ storage.modifier
+
         for (int i = 0; i < 10; i+= 2) {
 //      ^^^ keyword.control
 //           ^^^ storage.type
 //                 ^ keyword.operator.assignment.java
-//                   ^ constant.numeric.java
+//                   ^ constant.numeric.integer.decimal
 //                  ^^ meta.assignment.rhs.java
 //                    ^ punctuation.terminator.java - meta.assignment.rhs.java
 //                        ^ keyword.operator.comparison.java
-//                          ^^ constant.numeric.java
+//                          ^^ constant.numeric.integer.decimal
 //                            ^ punctuation.terminator.java
-//                               ^ keyword.operator.arithmetic.java
-//                                ^ keyword.operator.assignment.java
+//                               ^^ keyword.operator.assignment.java
 //                                 ^^ meta.assignment.rhs.java
 //                                   ^ - meta.assignment.rhs.java
             System.out.println(i);
@@ -268,7 +308,7 @@ public class Lambdas {
 //                                  ^^^^^^^^^ meta.assignment.rhs.java
 //                                    ^ variable.parameter.java
 //                                      ^^ storage.type.function.anonymous.java
-//                                         ^^ constant.numeric
+//                                         ^^ constant.numeric.integer.decimal
 //                                           ^ punctuation.terminator.java
      foo(a -> 42);
 //   ^^^^^^^^^^^^ meta.function-call.java
@@ -276,7 +316,7 @@ public class Lambdas {
 //      ^ punctuation.section.parens.begin.java
 //       ^ variable.parameter.java
 //         ^^ storage.type.function.anonymous.java
-//            ^^ constant.numeric
+//            ^^ constant.numeric.integer.decimal
 //              ^ punctuation.section.parens.end.java
 //               ^ punctuation.terminator.java
 
@@ -287,7 +327,7 @@ public class Lambdas {
 //    ^ variable.parameter.java
 //       ^ variable.parameter.java
 //          ^^ storage.type.function.anonymous.java
-//             ^^ constant.numeric
+//             ^^ constant.numeric.integer.decimal
 
      (int a, Foo<Integer>[] b) -> 42;
 //    ^^^ storage.type.primitive
@@ -298,7 +338,7 @@ public class Lambdas {
 //                      ^ punctuation.definition.generic.end.java
 //                          ^ variable.parameter.java
 //                             ^^ storage.type.function.anonymous.java
-//                                ^^ constant.numeric
+//                                ^^ constant.numeric.integer
 
   // Lambda parameter tests
   Function<String, String> lambda1 = (final @MyAnnotation String foo) -> foo;
@@ -446,6 +486,32 @@ public class GrafoTest {
 //      ^ storage.modifier
 //            ^ support.class
     }
+
+
+     @Partial @Mock(type=Grafo.class) DataLoader inline;
+//   ^^^^^^^^                          meta.annotation
+//            ^^^^^^^^^^^^^^^^^^^^^^^ meta.annotation
+//                                    ^ support.class
+
+     @Override public int inline() {
+//   ^^^^^^^^^ meta.annotation
+//   ^ punctuation.definition.annotation
+//    ^^^^^^^^ variable.annotation
+     }
+
+     void annotatedArgs(@NonNull final String p1,
+//                      ^^^^^^^^ meta.annotation
+//                               ^ storage.modifier - meta.annotation
+         @Named(value = "") List<T> p2, @NonNull final String p3) {}
+//       ^^^^^^^^^^^^^^^^^^ meta.annotation
+//                          ^ support.class
+//                              ^ meta.generic punctuation.definition.generic.begin
+//                                  ^ variable.parameter
+//                                    ^ punctuation.separator
+//                                      ^^^^^^^^ meta.annotation
+//                                               ^ storage.modifier - meta.annotation
+//                                                     ^ support.class
+
 }
 
 public enum FooEnum {
@@ -600,21 +666,21 @@ public class Foo {
   Object bar = SomeStaticClass.newBuilder().doThings(1)
 //                             ^ meta.function-call.java variable.function.java
 //                                          ^ meta.function-call.java variable.function.java
-//                                                   ^ meta.function-call.java constant.numeric.java
+//                                                   ^ meta.function-call.java constant.numeric.integer.decimal
       .withString("I am a string");
 //     ^ meta.function-call.java variable.function.java
 //                ^ meta.function-call.java string.quoted.double.java
 
   Object bah = someStaticMethodCall(4)
 //             ^ meta.function-call.java variable.function.java
-//                                  ^ meta.function-call.java constant.numeric.java
+//                                  ^ meta.function-call.java constant.numeric.integer.decimal
       .withString("I am a string");
 //     ^ meta.function-call.java variable.function.java
 //                ^ meta.function-call.java string.quoted.double.java
 
   private static final String DEFAULT_IDEMPOTENCY_KEY = 44493;
 //                            ^ entity.name.constant
-//                                                      ^ constant.numeric.java
+//                                                      ^ constant.numeric.integer.decimal
 
 
   private MyGenric<Param, With.Dots, With.Nested<Generic>, and.fully.Qualified,
@@ -701,19 +767,148 @@ public class Foo {
 //     ^ punctuation.section.parens.begin
 //          ^ punctuation.accessor.dot.java
 //                ^ keyword.operator.comparison.java
-//                 ^ constant.numeric.java
+//                 ^ constant.numeric.integer.decimal
 //                   ^ - meta.parens.java
       return foo<<32;
 //    ^^^^^^ keyword.control.java
-//              ^^ keyword.operator.comparison.java
-//                ^^ constant.numeric.java
+//              ^^ keyword.operator.bitshift.java
+//                ^^ constant.numeric.integer.decimal
 //                  ^ punctuation.terminator.java
     }
 //  ^ meta.block.java punctuation.section.block.end.java
 
+    int foo = true ? 1 : 2;
+//            ^^^^ constant.language.java
+//                 ^ keyword.operator.ternary.java
+//                   ^ constant.numeric.integer.decimal
+//                     ^ keyword.operator.ternary.java
+//                       ^ constant.numeric.integer.decimal
+//                        ^ punctuation.terminator.java
+
     return foo<bar;
+
+    if (a == false) {
+//        ^^ keyword.operator.comparison
+
+        x = (e & 1) << c^2;
+//             ^ keyword.operator.bitwise
+//                  ^^ keyword.operator.bitshift
+//                      ^ keyword.operator.bitwise
+
+        y = ~e >>> (c | 2);
+//          ^ keyword.operator.bitwise
+//             ^^^ keyword.operator.bitshift
+//                    ^ keyword.operator.bitwise
+
+        z &= x; z ^= x; z *= x; z /= x;
+//        ^^ keyword.operator.assignment
+//                ^^ keyword.operator.assignment
+//                        ^^ keyword.operator.assignment
+//                                ^^ keyword.operator.assignment
+
+    }
+
+    boolean inst = a instanceof Object;
+//                   ^^^^^^^^^^ keyword.operator.word.instanceof
   }
 //^ meta.method.java meta.method.body.java punctuation.section.block.end.java
+
+  int numbers() {
+    a = 0 + 0L;
+//      ^ constant.numeric.integer.decimal
+//        ^ keyword.operator
+//          ^^ constant.numeric.integer.decimal
+//           ^ storage.type.numeric.long
+
+    a = 0xABCD + 0xAB_CD;
+//      ^^^^^^ constant.numeric.integer.hexadecimal
+//      ^^ punctuation.definition.numeric.hexadecimal
+//             ^ keyword.operator
+//               ^^^^^^ constant.numeric.integer.hexadecimal
+//               ^^ punctuation.definition.numeric.hexadecimal
+
+    a = 0xAB_CD_ - 0x_AB_CD - 0_xAB_CD;
+//      ^^^^^^^^ constant.numeric.integer.hexadecimal
+//      ^^ punctuation.definition.numeric.hexadecimal
+//                 ^^^^^^^^ -constant.numeric
+//                            ^^^^^^^^ -constant.numeric
+
+    a = 07 + 0_7;
+//      ^^ constant.numeric.integer.octal
+//      ^ punctuation.definition.numeric.octal
+//         ^ keyword.operator
+//           ^^^ constant.numeric.integer.octal
+//           ^ punctuation.definition.numeric.octal
+
+    a = 07_ - 09;
+//      ^^^ constant.numeric.integer.octal
+//      ^ punctuation.definition.numeric.octal
+//            ^^ -constant.numeric
+
+    a = 0b101101 + 0b10_11_01;
+//      ^^^^^^^^ constant.numeric.integer.binary
+//      ^^ punctuation.definition.numeric.binary
+//               ^ keyword.operator
+//                 ^^^^^^^^^^ constant.numeric.integer.binary
+//                 ^^ punctuation.definition.numeric.binary
+
+    a = 0b_101101;
+//      ^^^^^^^^^ -constant.numeric
+
+    a = 12345 + 12_34_5 + 1_____5;
+//      ^^^^^ constant.numeric.integer.decimal
+//              ^^^^^^^ constant.numeric.integer.decimal
+//                        ^^^^^^^ constant.numeric.integer.decimal
+
+    a = 12345l + 12345L + 123_45d + 12_3245F
+//      ^^^^^^ constant.numeric.integer.decimal
+//           ^ storage.type.numeric.long
+//               ^^^^^^ constant.numeric.integer.decimal
+//                    ^ storage.type.numeric.long
+//                        ^^^^^^^ constant.numeric.float
+//                              ^ storage.type.numeric
+//                                  ^^^^^^^^ constant.numeric.float
+//                                         ^ storage.type.numeric
+
+    a = 12_34_5_ - _12_34_5 - 12_D - 12_L;
+//      ^^^^^^^^ constant.numeric.integer.decimal
+//                 ^^^^^^^^ -constant.numeric
+//                            ^^^^ -constant.numeric
+//                                   ^^^^ -constant.numeric
+
+    a = 0D
+//      ^^ constant.numeric.float
+//       ^ storage.type.numeric
+
+    a = 123_-_456;
+//      ^^^^ constant.numeric.integer.decimal
+//          ^ keyword.operator
+//           ^^^^ -constant.numeric
+
+    a = 23.45 + 23.45F + 23.45d
+//      ^^^^^ constant.numeric.float
+//              ^^^^^^ constant.numeric.float
+//                   ^ storage.type.numeric
+//                       ^^^^^^ constant.numeric.float
+//                            ^ storage.type.numeric
+
+    a = .01 + .02e3+.02e3F
+//      ^^^ constant.numeric.float
+//          ^ keyword.operator
+//            ^^^^^ constant.numeric.float
+//                 ^ keyword.operator
+//                   ^^^^^ constant.numeric.float
+//                       ^ storage.type.numeric
+
+    a = 23.45e67+23.45e+6F+23.45e-67D
+//      ^^^^^^^^ constant.numeric.float
+//              ^ keyword.operator
+//               ^^^^^^^^^ constant.numeric.float
+//                       ^ storage.type.numeric
+//                        ^ keyword.operator
+//                         ^^^^^^^^^^ constant.numeric.float
+//                                  ^ storage.type.numeric
+  }
 
   @Test
 //^ punctuation.definition.annotation.java
@@ -767,21 +962,31 @@ public class Foo {
 //  ^^^ storage.type.primitive.java
 //     ^^ storage.modifier.array.java
 //               ^^^ keyword.control.new.java
-//                   ^^^ storage.type.java
+//                   ^^^ storage.type.primitive.java
 //                      ^ punctuation.section.brackets.begin.java
 //                       ^ punctuation.section.brackets.end.java
 //                        ^ punctuation.definition.array-constructor.begin.java
-//                         ^ constant.numeric.java
+//                         ^ constant.numeric.integer.decimal
 //                          ^ punctuation.separator.java
-//                            ^ constant.numeric.java
+//                            ^ constant.numeric.integer.decimal
 //                             ^ punctuation.separator.java
-//                               ^ constant.numeric.java
+//                               ^ constant.numeric.integer.decimal
 //                                ^ punctuation.definition.array-constructor.end.java
+
+    byte [] foo;
+//  ^^^^ storage.type.primitive.java
+//      ^^^ storage.modifier.array.java
+    byte []b=new byte[size];
+//  ^^^^ storage.type.primitive.java
+//      ^^^ storage.modifier.array.java
+//          ^ keyword.operator.assignment.java
+//           ^^^ keyword.control.new.java
+//               ^^^^ storage.type.primitive.java
 
     int[][][] threeDimArr = new int[][][] {
 //  ^^^ storage.type.primitive.java
 //     ^^^^^^ storage.modifier.array.java
-//                              ^^^ storage.type.java
+//                              ^^^ storage.type.primitive.java
 //                                 ^ punctuation.section.brackets.begin.java
 //                                  ^ punctuation.section.brackets.end.java
 //                                   ^ punctuation.section.brackets.begin.java
@@ -790,39 +995,39 @@ public class Foo {
 //                                      ^ punctuation.section.brackets.end.java
 //                                        ^ punctuation.definition.array-constructor.begin.java
       { { 1, 2 }, { 3, 4 } },
-//        ^ constant.numeric.java
+//        ^ constant.numeric.integer.decimal
 //         ^ punctuation.separator.java
-//           ^ constant.numeric.java
+//           ^ constant.numeric.integer.decimal
 //    ^ punctuation.definition.array-constructor.begin.java
 //                         ^ punctuation.definition.array-constructor.end.java
 //                          ^ punctuation.separator.java
       { { 5, 6 }, { 7, 8 } }
-//        ^ constant.numeric.java
+//        ^ constant.numeric.integer.decimal
 //         ^ punctuation.separator.java
-//           ^ constant.numeric.java
+//           ^ constant.numeric.integer.decimal
 //    ^ punctuation.definition.array-constructor.begin.java
 //                         ^ punctuation.definition.array-constructor.end.java
     };
 //  ^ punctuation.definition.array-constructor.end.java
 
     threeDimArr = new int[1][3][4];
-//                    ^^^ storage.type.java
+//                    ^^^ storage.type.primitive.java
 //                       ^^^^^^^^^ meta.brackets.java
 //                       ^ punctuation.section.brackets.begin.java
-//                        ^ constant.numeric.java
+//                        ^ constant.numeric.integer.decimal
 //                         ^ punctuation.section.brackets.end.java
 //                          ^ punctuation.section.brackets.begin.java
-//                           ^ constant.numeric.java
+//                           ^ constant.numeric.integer.decimal
 //                            ^ punctuation.section.brackets.end.java
 //                             ^ punctuation.section.brackets.begin.java
-//                              ^ constant.numeric.java
+//                              ^ constant.numeric.integer.decimal
 //                               ^ punctuation.section.brackets.end.java
 
     bob = new some.path.to.MyObject[3];
 //            ^^^^^^^^^^^^^^^^^^^^^ support.class.java
 //                                 ^^^ meta.brackets.java
 //                                 ^ punctuation.section.brackets.begin.java
-//                                  ^ constant.numeric.java
+//                                  ^ constant.numeric.integer.decimal
 //                                   ^ punctuation.section.brackets.end.java
 
     foo.forEach((k, v) -> {
@@ -857,6 +1062,21 @@ public class Foo {
     int foo;
   }
 //^ meta.method.java meta.method.body.java punctuation.section.block.end.java
+
+  void arrayMethod(byte [] [] a, int b, byte[] c) {}
+//^^^^ storage.type.primitive.java
+//     ^^^^^^^^^^^ entity.name.function.java
+//                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.method.parameters.java
+//                                               ^ - meta.method.parameters.java
+//                 ^^^^ storage.type.primitive.java
+//                      ^^^^^ storage.modifier.array.java
+//                            ^ variable.parameter.java
+//                               ^^^ storage.type.primitive.java
+//                                   ^ variable.parameter.java
+//                                      ^^^^ storage.type.primitive.java
+//                                          ^^ storage.modifier.array.java
+//                                             ^ variable.parameter.java
+
 
   public class Foo<T extends int> {}
   //              ^^^^^^^^^^^^^^^ meta.generic.java

@@ -313,7 +313,7 @@ namespace TestNamespace.Test
 ///         ^ meta.method meta.block meta.block punctuation.section.block.end
 
             switch (foo) {
-///         ^ keyword.control
+///         ^^^^^^ keyword.control.flow.switch
 ///                ^^^^^ meta.group
 ///                ^ punctuation.section.group.begin
 ///                 ^^^ variable.other
@@ -1056,6 +1056,14 @@ namespace TestNamespace.Test
                 break;
         }
     
+    int foo;
+    int.TryParse(input, out foo);
+///                     ^^^ storage.modifier.argument
+///                         ^^^ variable.other - support.type
+    int.TryParse(input, out foo /* comment */);
+///                     ^^^ storage.modifier.argument
+///                         ^^^ variable.other - support.type
+    
         "hello".OfType<char>().Where(c => c == 'l').Count());
 ///                                                        ^ invalid.illegal.stray.brace
 
@@ -1149,6 +1157,10 @@ namespace TestNamespace.Test
 ///                                 ^^^^^^^^^^^^^^^^^^^^^^ constant.other.placeholder - invalid
 ///                                            ^^^^ constant.character.escape
 ///                                                      ^ punctuation.definition.placeholder.end
+        formatted = string.Format(test, hello == true, world);
+///                                     ^^^^^ variable.other - variable.parameter
+///                                                    ^^^^^ variable.other - variable.parameter
+///                                           ^^ keyword.operator - keyword.operator.assignment
     }
 }
 ///<- punctuation.section.block.end
@@ -1165,4 +1177,16 @@ class Test
 ///                           ^ invalid.illegal.expected-close-paren
     }
 /// ^ - invalid.illegal.stray.brace
+}
+
+void Main () { // method outside a class, i.e. a LINQPad script
+///^ storage.type
+///  ^^^^ entity.name.function
+}
+/// <- punctuation.section.block.end
+
+public class AfterTopLevelMethod {
+///^^^ storage.modifier.access
+///    ^^^^^ storage.type.class
+///          ^^^^^^^^^^^^^^^^^^^ entity.name.class
 }

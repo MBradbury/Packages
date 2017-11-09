@@ -16,13 +16,18 @@ variables:
   bin_op: '(?:\+|->|-|\*|/|%|\|\||&&|\||&|\^|<<|>>|=>|<=|<|>=|>|==|!=|\?\?)'
   unary_op: '(?:\+\+|--|-|~|!|&|\*)'
 
+  # digit separators
+  digit_separators: '(?:(?:_+[0-9]+)*)'
+  
   # integers
-  hex_numeral: '0[xX][0-9a-fA-F]+'
-  decimal_numeral: '(0|[1-9][0-9]*)((?i:ul|lu|u|l))'
+  hex_numeral: '(0[xX])\h+(?:_+\h+)*'
+  binary_numeral: '(0[bB])[01]+(?:_+[01]+)*'
+  decimal_numeral: '(0|[1-9][0-9]*{{digit_separators}})((?i:ul|lu|u|l)?)'
 
   # floating point numbers
-  exponent: '[eE][+\-]?[0-9]+'
-  floating_point: '([0-9]+(?:\.[0-9]+)?(?:{{exponent}})?)([fFdDmM]?)'
+  exponent: '[eE][+\-]?[0-9]+{{digit_separators}}'
+  floating_point: '([0-9]+{{digit_separators}}(?={{floating_point_suffix}}|[.Ee])(?:\.[0-9]+{{digit_separators}})?(?:{{exponent}})?)({{floating_point_suffix}}?)'
+  floating_point_suffix: '[fFdDmM]'
 
   # characters
   unicode_char: '(?:\\u\h{4}|\\U\h{8})'
@@ -217,7 +222,15 @@ contexts:
         3: meta.path.cs
       push: using_namespace
 
+  namespace_alias:
+    - match: '(?:(global)|({{name}}))\s*(::)'
+      captures:
+        1: support.namespace.cs
+        2: variable.other.namespace.cs
+        3: punctuation.accessor.double-colon.namespace.cs
+
   using_namespace:
+    - include: namespace_alias
     - match: '{{name}}'
       scope: meta.path.cs
     - match: '='
@@ -230,7 +243,7 @@ contexts:
     - match: ';'
       scope: punctuation.terminator.cs
       pop: true
-    - match: '\S+'
+    - match: '[^\s;]+'
       scope: invalid.illegal.expected-namespace.cs
     - match: '$'
       pop: true
@@ -474,11 +487,11 @@ contexts:
       scope: punctuation.separator.inherited-class.cs
 
   method_declaration:
-    - match: '\b(abstract|async|const|event|extern|new|override|readonly|sealed|static|unsafe|virtual|volatile)\b'
+    - match: '\b(abstract|async|const|event|extern|new|override|readonly|ref|sealed|static|unsafe|virtual|volatile)\b'
       scope: storage.modifier.cs
     - match: \bdelegate\b
       scope: storage.type.delegate.cs
-    - match: '\b(dynamic)\b'
+    - match: '\bdynamic\b'
       scope: storage.modifier.cs
     - match: '\b(implicit|explicit)\b'
       scope: storage.modifier.cs
@@ -527,6 +540,17 @@ contexts:
         6: punctuation.section.brackets.end.cs
         7: keyword.operator.pointer.cs
       push: method_name
+    - match: \(
+      scope: punctuation.section.group.begin.cs
+      push:
+        - meta_scope: meta.group.cs
+        - match: \)
+          scope: punctuation.section.group.end.cs
+          set: method_name
+        - match: ','
+          scope: punctuation.separator.cs
+        - match: (?=\S)
+          push: var_declaration_explicit
 
   method_name:
     - match: '\.'
@@ -637,8 +661,9 @@ contexts:
     - include: attribute
     - match: (?=[^\s\[])
       set:
-      - match: '\s*(out|ref|this|params)\s+'
-        scope: storage.modifier.parameter.cs
+      - match: '\s*\b(out|ref|this|params)\s+'
+        captures:
+          1: storage.modifier.parameter.cs
       - match: \s
         pop: true
       - include: type
@@ -777,7 +802,10 @@ contexts:
 
   code_block_in:
     - match: (?=\S)
-      push: line_of_code
+      push:
+        - match: (?={{reserved}})
+          pop: true
+        - include: line_of_code
 
   line_of_code:
     # language keywords
@@ -787,7 +815,7 @@ contexts:
       set: [else_block, if_block, if_condition]
     - match: \b(switch)\b
       captures:
-        1: keyword.control.conditional.if.cs
+        1: keyword.control.flow.switch.cs
       set: [switch_block, if_condition]
     - match: \b(for)\s*(\()
       captures:
@@ -843,19 +871,12 @@ contexts:
         3: punctuation.terminator.statement.cs
       pop: true
     - include: keywords
-    # TODO: use the same code for method detection
     # C#7, nested method
-    - match: '(?:({{base_type}})|({{name}})){{type_suffix_capture}}\s+(?={{name}}{{generic_declaration}}\()'
-      captures:
-        1: storage.type.cs
-        2: support.type.cs
-        3: storage.type.nullable.cs
-        4: meta.brackets.cs
-        5: punctuation.section.brackets.begin.cs
-        6: punctuation.separator.cs
-        7: punctuation.section.brackets.end.cs
-        8: keyword.operator.pointer.cs
-      push: method_name
+    - match: '(?=(?:\basync\s+)?({{base_type}}|{{name}}){{type_suffix_capture}}({{generic_declaration}})?\s+{{name}}{{generic_declaration}}\()'
+      push:
+        - include: method_declaration
+        - match: ''
+          pop: true
     - match: '({{name}})(<)(?=([^(={};]*>){{type_suffix}}\s+{{name}}{{generic_declaration}}\()'
       captures:
         1: support.type.cs
@@ -915,14 +936,7 @@ contexts:
         1: entity.name.label.cs
         2: punctuation.separator.cs
       pop: true
-    - match: '(?:(global)|({{name}}))\s*(::)'
-      captures:
-        1: support.namespace.cs
-        2: variable.other.namespace.cs
-        3: punctuation.accessor.double-colon.namespace.cs
-    - match: '{{name}}(\.)'
-      captures:
-        1: punctuation.accessor.dot.cs
+    - include: namespace_alias
     - match: '({{name}})\s+({{name}})'
       captures:
         1: support.type.cs
@@ -1269,7 +1283,11 @@ contexts:
           pop: true
         - match: ','
           scope: punctuation.separator.expression.cs
-        - include: line_of_code_in
+        - match: ':'
+          scope: punctuation.separator.assignment.cs
+        - match: (?!{{reserved}})(?={{name}}{{generic_declaration}}{{type_suffix}}\s+{{name}}\s*[:,])
+          push: var_declaration_explicit
+        - include: line_of_code_in_no_semicolon
     - match: \{
       scope: punctuation.section.block.begin.cs
       set:
@@ -1299,9 +1317,20 @@ contexts:
       pop: true
 
   arguments:
-    - match: (out|ref)\s
-      scope: storage.modifier.argument.cs
-    - match: '({{name}})\s*(=)'
+    - match: (out)\s
+      captures:
+        1: storage.modifier.argument.cs
+      push:
+        - match: (ref)\s
+          captures:
+            1: storage.modifier.argument.cs
+        - match: (?!{{name}}{{type_suffix}}\s+{{name}})
+          pop: true
+        - include: var_declaration
+    - match: (ref)\s
+      captures:
+        1: storage.modifier.argument.cs
+    - match: '({{name}})\s*(=)(?!=)'
       captures:
         1: variable.parameter.cs
         2: keyword.operator.assignment.cs
@@ -1345,11 +1374,7 @@ contexts:
       scope: support.type.cs
 
   type_common:
-    - match: '(?:(global)|({{name}}))\s*(::)'
-      captures:
-        1: support.namespace.cs
-        2: variable.other.namespace.cs
-        3: punctuation.accessor.double-colon.namespace.cs
+    - include: namespace_alias
     - match: '(class|struct|enum)'
       scope: storage.type.other.cs
     - match: 'new\s*\(\s*\)'
@@ -1418,28 +1443,34 @@ contexts:
     # characters
     - match: '''\'''
       scope: invalid.illegal.lone-escape.cs
-    - match: "(')({{escaped_char}})(')"
+    - match: (')({{escaped_char}})(')
       scope: constant.character.cs
       captures:
         2: constant.character.escape.cs
-    - match: "(')({{escaped_char}})(')"
+    - match: (')({{escaped_char}})(')
       scope: constant.character.cs
       captures:
         2: constant.character.escape.cs
-    - match: "'.'"
+    - match: (').(')
       scope: constant.character.cs
-    - match: "'[^']+'"
+    - match: (')[^']+(')
       scope: invalid.illegal.not_a_char.cs
     # numbers
     - match: '{{hex_numeral}}'
-      scope: constant.numeric.cs
-    - match: '{{decimal_numeral}}'
+      scope: constant.numeric.integer.hexadecimal.cs
       captures:
-        1: constant.numeric.cs
-        2: storage.type.numeric.cs
+        1: punctuation.definition.numeric.hexadecimal.cs
+    - match: '{{binary_numeral}}'
+      scope: constant.numeric.integer.binary.cs
+      captures:
+        1: punctuation.definition.numeric.binary.cs
     - match: '{{floating_point}}'
       captures:
-        1: constant.numeric.cs
+        1: constant.numeric.float.decimal.cs
+        2: storage.type.numeric.cs
+    - match: '{{decimal_numeral}}'
+      captures:
+        1: constant.numeric.integer.decimal.cs
         2: storage.type.numeric.cs
     # strings
     - match: '"'

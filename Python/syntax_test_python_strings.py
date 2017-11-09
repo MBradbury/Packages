@@ -23,6 +23,11 @@ var = "\x00 \xaa \xAF \070 \r \n \t \\ \a \b \' \v \f \u0aF1 \UFe0a182f \N{SPACE
 #                                                            ^^^^^^^^^^ constant.character.escape.unicode
 #                                                                       ^^^^^^^^^ constant.character.escape.unicode
 
+invalid_escapes = "\.  \7 \-"
+#                  ^^ invalid.deprecated.character.escape.python
+#                      ^^ invalid.deprecated.character.escape.python
+#                         ^^ invalid.deprecated.character.escape.python
+
 conn.execute("SELECT * FROM foobar")
 #              ^ meta.string.python keyword.other.DML.sql
 
@@ -416,7 +421,7 @@ sql = Ur"SELECT `name` FROM `users` \
 #                              ^ punctuation.definition.string.end.python
 
 sql = b'just some \
-#     ^^^^^^^^^^^^^^ string.quoted.single.python - invalid.illegal.unclosed-string.python, \
+#      ^^^^^^^^^^^^^ string.quoted.single.python - invalid.illegal.unclosed-string.python, \
 #                 ^ punctuation.separator.continuation.line.python, \
     string'
 #^^^^^^^^^^ string.quoted.single
@@ -493,21 +498,27 @@ a=["aaaa{", "bbbb{"]
 #       ^ - constant.other.placeholder
 #        ^ punctuation.definition.string.end.python
 
+foo = "{text{" # Comment
+#      ^^^^^^ - constant.other.placeholder
+#            ^ punctuation.definition.string.end
+bar = "}}" # Comment
+#      ^^ constant.character.escape
+
 f"string"
 # <- storage.type.string
 #^^^^^^^^ string.quoted.double
 
  RF"""string"""
-#^^ storage.type.string
-#^^^^^^^^^^^^^^ meta.string.interpolated string.quoted.double.block
+#^^ storage.type.string - string
+#  ^^^^^^^^^^^^ meta.string.interpolated string.quoted.double.block
 
 F'''string'''
 # <- storage.type.string
 #^^^^^^^^^^^^ meta.string.interpolated string.quoted.single.block
 
  rf'string'
-#^^ storage.type.string
-#^^^^^^^^^^ meta.string.interpolated string.quoted.single
+#^^ storage.type.string - string
+#  ^^^^^^^^ meta.string.interpolated string.quoted.single
 
 rf'\r\n' f'\r\n'
 #  ^^^^ - constant
@@ -558,7 +569,8 @@ f"result: {value:{width}.{precision}}\n"
 #                        ^^^^^^^^^^^ meta.interpolation.python meta.interpolation.python
 #                                   ^^^ - meta.interpolation.python meta.interpolation.python
 rf"{value:{width!s:d}}"
-#^^^^^^^^^^^^^^^^^^^^^^ meta.string.interpolated
+# <- storage.type.string.python - string
+# ^^^^^^^^^^^^^^^^^^^^^ meta.string.interpolated
 #          ^^^^^ source source.python.embedded
 #               ^^ storage.modifier.conversion
 #                 ^^ constant.other.format-spec
